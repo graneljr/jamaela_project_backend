@@ -15,6 +15,18 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
 app.use((req, res) => res.status(404).json({ message: `No API route for ${req.method} ${req.originalUrl}` }));
 app.use((error, _req, res, _next) => {
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Request body must contain valid JSON." });
+  }
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ message: "Request body is too large." });
+  }
+  if (error.code === 11000) {
+    return res.status(409).json({ message: "A record with these details already exists." });
+  }
+  if (["ValidationError", "CastError"].includes(error.name)) {
+    return res.status(400).json({ message: "One or more submitted values are invalid." });
+  }
   console.error(error);
   res.status(500).json({ message: "Something went wrong. Please try again." });
 });
